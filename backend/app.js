@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+app.use("/user", require("./routes/userRoutes"));
 // Attempt to load optional DB config; continue if not present
 try {
   require("./config/db");
