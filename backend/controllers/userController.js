@@ -1,64 +1,69 @@
-const db = require("../config/db");
+const policyModel = require("../models/policyModel");
+const claimModel = require("../models/claimModel");
 
-exports.getSummary = (req, res) => {
-  const userId = req.user.id;
+const getUserPolicies = async (req, res) => {
+  try {
+    const policies = await policyModel.getPoliciesByUserId(req.user.id);
 
-  db.get(
-    `SELECT 
-        (SELECT COUNT(*) FROM policies WHERE user_id = ?) AS activePolicies,
-        (SELECT COUNT(*) FROM claims WHERE user_id = ?) AS totalClaims`,
-    [userId, userId],
-    (err, row) => {
-      if (err) {
-        return res.status(500).json({ success: false });
-      }
-
-      res.json({
-        success: true,
-        data: row,
-      });
-    },
-  );
+    res.json({
+      success: true,
+      data: policies,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch policies",
+    });
+  }
 };
 
-exports.getPolicies = (req, res) => {
-  const userId = req.user.id;
+const getUserClaims = async (req, res) => {
+  try {
+    const claims = await claimModel.getClaimsByUserId(req.user.id);
 
-  db.all(
-    `SELECT id, plan_name, status, start_date, end_date
-     FROM policies
-     WHERE user_id = ?`,
-    [userId],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ success: false });
-      }
-
-      res.json({
-        success: true,
-        data: rows,
-      });
-    },
-  );
+    res.json({
+      success: true,
+      data: claims,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch claims",
+    });
+  }
 };
 
-exports.getClaims = (req, res) => {
-  const userId = req.user.id;
+const getUserSummary = async (req, res) => {
+  try {
+    const policies = await policyModel.getPoliciesByUserId(req.user.id);
+    const claims = await claimModel.getClaimsByUserId(req.user.id);
 
-  db.all(
-    `SELECT id, incident_type, amount, status, created_at
-     FROM claims
-     WHERE user_id = ?`,
-    [userId],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ success: false });
-      }
+    let dbs = 70;
 
-      res.json({
-        success: true,
-        data: rows,
-      });
-    },
-  );
+    if (policies.length > 0) dbs += 5;
+    if (claims.length > 0) dbs -= 10;
+
+    if (dbs > 100) dbs = 100;
+    if (dbs < 0) dbs = 0;
+
+    res.json({
+      success: true,
+      data: {
+        dbsScore: dbs,
+        policyCount: policies.length,
+        claimCount: claims.length,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch summary",
+    });
+  }
+};
+
+module.exports = {
+  getUserPolicies,
+  getUserClaims,
+  getUserSummary,
 };
