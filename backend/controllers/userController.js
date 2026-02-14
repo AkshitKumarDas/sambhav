@@ -1,13 +1,14 @@
 const policyModel = require("../models/policyModel");
 const claimModel = require("../models/claimModel");
+const dbsModel = require("../models/dbsModel");
 
 const getUserPolicies = async (req, res) => {
   try {
-    const policies = await policyModel.getPoliciesByUserId(req.user.id);
+    const policies = (await policyModel.getPoliciesByUserId(req.user.id)) || [];
 
     res.json({
       success: true,
-      data: policies,
+      data: policies || [],
     });
   } catch (error) {
     res.status(500).json({
@@ -19,11 +20,11 @@ const getUserPolicies = async (req, res) => {
 
 const getUserClaims = async (req, res) => {
   try {
-    const claims = await claimModel.getClaimsByUserId(req.user.id);
+    const claims = (await claimModel.getClaimsByUserId(req.user.id)) || [];
 
     res.json({
       success: true,
-      data: claims,
+      data: claims || [],
     });
   } catch (error) {
     res.status(500).json({
@@ -35,16 +36,12 @@ const getUserClaims = async (req, res) => {
 
 const getUserSummary = async (req, res) => {
   try {
-    const policies = await policyModel.getPoliciesByUserId(req.user.id);
-    const claims = await claimModel.getClaimsByUserId(req.user.id);
+    const policies = (await policyModel.getPoliciesByUserId(req.user.id)) || [];
+    const claims = (await claimModel.getClaimsByUserId(req.user.id)) || [];
 
-    let dbs = 70;
+    const dbsData = await dbsModel.getLatestScore(req.user.id);
 
-    if (policies.length > 0) dbs += 5;
-    if (claims.length > 0) dbs -= 10;
-
-    if (dbs > 100) dbs = 100;
-    if (dbs < 0) dbs = 0;
+    const dbs = dbsData ? dbsData.score : 70;
 
     res.json({
       success: true,
@@ -57,7 +54,7 @@ const getUserSummary = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to fetch summary",
+      message: error.message,
     });
   }
 };
