@@ -31,12 +31,9 @@ exports.createClaim = async (req, res) => {
       });
     }
 
-    const allowedModules =
-      (PLAN_MODULES[policy.plan_name] &&
-        PLAN_MODULES[policy.plan_name].modules) ||
-      [];
+    const allowedModules = PLAN_MODULES[policy.plan_name]?.modules;
 
-    if (!allowedModules) {
+    if (!Array.isArray(allowedModules) || allowedModules.length === 0) {
       return res.status(400).json({
         success: false,
         message: "Invalid or Unsupported Plan",
@@ -56,6 +53,7 @@ exports.createClaim = async (req, res) => {
       incidentType,
       description,
       amount,
+      claimCategory,
     );
 
     res.json({

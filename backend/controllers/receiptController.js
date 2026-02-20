@@ -13,6 +13,13 @@ exports.getReceiptByPolicyId = async (req, res) => {
       });
     }
 
+    if (req.user.role !== "admin" && receipt.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
+    }
+
     res.json({
       success: true,
       data: receipt,

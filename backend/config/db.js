@@ -1,6 +1,8 @@
+const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
+const dbPath = path.resolve(__dirname, "../sambhav.db");
 
-const db = new sqlite3.Database("./sambhav.db", (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error("Database connection error:", err.message);
   } else {
@@ -45,6 +47,49 @@ db.run(`
     status TEXT DEFAULT 'submitted',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
+`);
+
+const ensureClaimsColumns = () => {
+  db.all("PRAGMA table_info(claims)", [], (err, columns) => {
+    if (err) {
+      console.error("Failed to inspect claims schema:", err.message);
+      return;
+    }
+
+    const existing = new Set((columns || []).map((column) => column.name));
+    const migrations = [];
+
+    if (!existing.has("reviewed_by")) {
+      migrations.push("ALTER TABLE claims ADD COLUMN reviewed_by INTEGER");
+    }
+    if (!existing.has("reviewed_at")) {
+      migrations.push("ALTER TABLE claims ADD COLUMN reviewed_at TEXT");
+    }
+    if (!existing.has("admin_note")) {
+      migrations.push("ALTER TABLE claims ADD COLUMN admin_note TEXT");
+    }
+
+    migrations.forEach((sql) => {
+      db.run(sql, (migrationErr) => {
+        if (migrationErr) {
+          console.error("Claims migration failed:", migrationErr.message);
+        }
+      });
+    });
+  });
+};
+
+ensureClaimsColumns();
+
+db.run(`
+CREATE TABLE IF NOT EXISTS claim_status_history (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  claim_id INTEGER NOT NULL,
+  previous_status TEXT,
+  new_status TEXT,
+  changed_by INTEGER,
+  changed_at TEXT DEFAULT CURRENT_TIMESTAMP
+)
 `);
 // DBS
 db.run(`

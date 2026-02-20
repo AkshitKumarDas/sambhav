@@ -7,7 +7,7 @@ exports.createPolicy = async (req, res) => {
     const allowedPlans = ["basic", "advanced"];
     if (!allowedPlans.includes(planName)) {
       return res.status(400).json({
-        success: "false",
+        success: false,
         message: "Invalid Plan Selected",
       });
     }

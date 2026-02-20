@@ -4,7 +4,7 @@ const PLAN_MODULES = {
     modules: ["upi_fraud", "account_takeover"],
   },
 
-  plus: {
+  advanced: {
     summary: "Extended protection including scams and phishing attacks.",
     modules: ["upi_fraud", "account_takeover", "phishing"],
   },
